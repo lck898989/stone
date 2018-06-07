@@ -1,0 +1,30 @@
+{
+  "ver": "1.0.0",
+  "uuid": "750e57cf-16a2-4906-89a2-112c8977980e",
+  "type": "sprite",
+  "wrapMode": "clamp",
+  "filterMode": "bilinear",
+  "subMetas": {
+    "俄罗斯方块返回界面1": {
+      "ver": "1.0.3",
+      "uuid": "efcede38-16e1-4e61-844e-49486dbdd316",
+      "rawTextureUuid": "750e57cf-16a2-4906-89a2-112c8977980e",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": 0,
+      "offsetY": 0,
+      "trimX": 0,
+      "trimY": 0,
+      "width": 1242,
+      "height": 2208,
+      "rawWidth": 1242,
+      "rawHeight": 2208,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "subMetas": {}
+    }
+  }
+}
