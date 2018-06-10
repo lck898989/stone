@@ -5,6 +5,7 @@ cc.Class({
         //该方格是否已经填充东西初始化为false
         isFilled : false,
         type     : null,
+        node     : null,
     },
 
     // LIFE-CYCLE CALLBACKS:

@@ -1,4 +1,3 @@
-var Shape = require("Shape");
 cc.Class({
     extends: cc.Component,
 
