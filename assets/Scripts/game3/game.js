@@ -32,15 +32,16 @@ cc.Class({
         next2 : {
             default : null,
             type    : cc.Node,
+        },
+        over : {
+             default : null,
+             type    : cc.Node,
         }
 
     },
     // use this for initialization
     onLoad: function () {
-        //消除之后待下落数组的集合
-        this.afterMoveNodeArr = [];
         this.myyy=0;
-        this.myy = ['3'];
         this.nodeWidth = this.node.width;
         this.nodeHeight = this.node.height;
         this.timeDao = 0;
@@ -63,7 +64,7 @@ cc.Class({
         //保存临时的形状
         // this.shapeNode = new Shape(this.node,this.createRandomX(this.createRandom(0,6)),this.nodeHeight/2 - this.prefabHeight/2);
         //存放每次生成的预制体数组即是活动的条
-        this.nodeArr = this.createShape(this.node,this.createRandomX(this.createRandom(0,6)),this.nodeHeight/2 - this.prefabHeight/2);
+        this.nodeArr = this.createShape(this.node,3,6,"Stone");
         //生成下一个形状
         this.createNext();
         // //显示下一个形状
@@ -78,7 +79,10 @@ cc.Class({
         //创建地图的二维数组
         this.map = this.createMatrix(12,6,0);
         
+        //不显示结束标语
+        this.over.active = false;
         //创建下一个旋转体
+        this.gameOver = false;
         // this.nextShape = new Shape(this.nextShape,0,0);
         
         //当前条是否还可以改变状态
@@ -91,8 +95,8 @@ cc.Class({
                         }
                 }
             }
-        }
             return false;
+        }
     },
     //产生x坐标为[-250,-150,-50,50,150,250]
     createRandomX : function(randomNumber){
@@ -222,12 +226,7 @@ cc.Class({
         return prefabNode;
     },
     //生成形状
-    createShape : function(parentNode,x,y){
-        cc.log("322222222222222" + (this.node.childrenCount-72));
-        //创建类型数组
-        this.type0Arr = [];
-        this.type1Arr = [];
-        this.type2Arr = [];
+    createShape : function(parentNode,count,scope,sc){
         this.times = 0;
         //动态生成一个新的节点将生成的预制体节点加入到该父节点上
         // var newNode = new cc.Node();
@@ -238,11 +237,11 @@ cc.Class({
         //盛放颜色代码的数组每次重新生成预制体节点的时候将之前的颜色代码数组置空
         this.boxColorArr = [];
         var y = this.nodeHeight/2 + this.prefabHeight/2+2*this.prefabHeight;
-        for(var i = 0;i < 3;i++){
+        for(var i = 0;i < count;i++){
             // var offSet = i * this.prefabHeight;
             // cc.log("offSet is " + offSet);
             // //产生0-3的随机数
-            var index = Math.floor(Math.random()*200000) % 6;
+            var index = Math.floor(Math.random()*200000) % scope;
             // //将对应的颜色索引存放到该数组中
             // // this.boxColorArr.push(this.prefabArr[index].color);
             // cc.log("index is " + index);
@@ -252,11 +251,11 @@ cc.Class({
             //设置预制节点的位置
             prefabNode.setPosition(this.backGroundArr[i][randomCol].x,y-i*this.prefabHeight);
             
-            prefabNode.getComponent("Stone").type = index;
+            prefabNode.getComponent(sc).type = index;
             prefabNode.active = false;
 
             this.backGroundArr[i][randomCol].node = prefabNode;
-            cc.log("------type is " + prefabNode.getComponent("Stone").type);
+            cc.log("------type is " + prefabNode.getComponent(sc).type);
             //将该预制节点添加为parentNode的孩子
             parentNode.addChild(prefabNode);
             // var shape = new Shape(prefabNode,index);
@@ -315,6 +314,17 @@ cc.Class({
         //     this.updatePrefatY(dt);
         // }
         // cc.log("当前行是："+ this.getRow() + " 当前列是：" + this.getColumn());
+        for(let colN = 0;colN < 6;colN++){
+                //如果有一列的背景状态为1就停止游戏
+                if(this.backGroundArr[0][colN].isFilled === 1){
+                    //取消所有计时器
+                    this.unscheduleAllCallbacks();
+                    //使界面变为不可操作状态
+                    this.gameOver = true;
+                    // alert("游戏结束");
+                    this.over.active = true;
+                }
+        }
     },
     //定时器控制下落
     downFunction : function(nodeArr,time){
@@ -348,15 +358,7 @@ cc.Class({
                 // for(let m = 2;m >=0;m--){
                 //     nodeArr[m].y -= (this.nodeWidth/6);
                 // }
-                for(let colN = 0;colN < 6;colN++){
-                    //如果有一列的背景状态为1就停止游戏
-                    if(this.backGroundArr[0][colN].isFilled === 1){
-                        //取消所有计时器
-                        this.unscheduleAllCallbacks();
-                        //使界面变为不可操作状态
-                        // alert("游戏结束");
-                    }
-                }
+                
                 for(let m = 0;m<3;m++){
                     nodeArr[m].active = false;
                 }
@@ -654,13 +656,14 @@ cc.Class({
     quickDown : function(){
          //停止正常下落的计时器
          this.unscheduleAllCallbacks();
-         for(let start = 0;start < 6;start++){
-             if(this.backGroundArr[0][start].isFilled != 1){
-                //开始快速下落的计时器
-                this.downFunction(this.nodeArr,0.02);
-             }
+         if(!this.gameOver){
+                for(let start = 0;start < 6;start++){
+                    if(this.backGroundArr[0][start].isFilled != 1){
+                        //开始快速下落的计时器
+                        this.downFunction(this.nodeArr,0.02);
+                    }
+                }
          }
-         
         //  for(var i = 2;i >= 0;i--){
         //      this.checkDownHasBlock(this.nodeArr[i].prefabNode);
         //  }
@@ -707,15 +710,15 @@ cc.Class({
                 cc.log("找到了3个以上的待消队列");
                 //
                 cc.log("------------------->willDeleteNodes is " + willDeleteNodes);
-                if(this.isCommonX(willDeleteNodes)){
-                    //把待消队列里面的第一个元素的上面的节点找出来进行下落
-                    var downQueue = this.getWillRemoveUpNode(this.getRow(willDeleteNodes[0]),this.getColumn(willDeleteNodes[0]));
-                    cc.log("downQueue is " + downQueue);
-                    this.removeAndDown(willDeleteNodes,downQueue);
-                }else{
+                // if(this.isCommonX(willDeleteNodes)){
+                //     //把待消队列里面的第一个元素的上面的节点找出来进行下落
+                //     var downQueue = this.getWillRemoveUpNode(this.getRow(willDeleteNodes[0]),this.getColumn(willDeleteNodes[0]));
+                //     cc.log("downQueue is " + downQueue);
+                //     this.removeAndDown(willDeleteNodes,downQueue);
+                // }else{
                     //先删除这些待消队列，上面的依次下落
                     this.removeAndDown(willDeleteNodes);
-                }
+                // }
                 
             }
         } 
@@ -832,12 +835,13 @@ cc.Class({
                     x = this.removeNodeFromGameScene(waitRemoveNodeArr[m],1,waitAgainDeleteArr);
                 }
                 if(waitAgainDeleteArr.length != 0){
-                    for(let j = 0;j < waitAgainDeleteArr.length;j++){
-                        var tempArr = [];
-                        tempArr.push(waitAgainDeleteArr[j]);
-                        cc.log("tempArr's length is " + tempArr.length);
-                        this.changeBackBlockStatus(tempArr);
-                    }
+                    // for(let j = 0;j < waitAgainDeleteArr.length;j++){
+                    //     var tempArr = [];
+                    //     tempArr.push(waitAgainDeleteArr[j]);
+                    //     cc.log("tempArr's length is " + tempArr.length);
+                    //     this.changeBackBlockStatus(tempArr);
+                    // }
+                    this.changeBackBlockStatus(waitAgainDeleteArr);
                 }
                 //将之前的this.waitRemoveNodeArr置空
                 // this.waitRemoveNodeArr = [];
@@ -1013,6 +1017,7 @@ cc.Class({
     },
     //从父节点清除符合条件的节点
     removeNodeFromGameScene : function(waitRemoveNode){
+        var self = this;
         // waitRemoveNode.getComponent("Stone").isRemove = true;
         // //定义一个数组专门负责记录每下落一次需要消除的节点数组（预制节点数组）
         // var deleteShape = new Shape(waitRemoveNode,this.getTypeByColor(waitRemoveNode.color));
@@ -1033,7 +1038,22 @@ cc.Class({
                     this.backGroundArr[row][col].type = -1;
                     cc.log(this.backGroundArr[row][col].isFilled + "******" + this.backGroundArr[row][col].type);
                     //销毁该节点
-                     this.node.children[child].destroy();
+                     function test(resolve,reject){
+                        self.scheduleOnce(function(dt){
+                            cc.log("----->----->----->");
+                            resolve();
+                        },1);
+                    }
+                    var p1 = new Promise(test);
+                    cc.log("---->---->" + p1);
+                    p1.then(function(){
+                        //1秒时间缩放x轴y轴的比例为0.7，0.7
+                        var action1 = cc.scaleTo(1,0.7,0.7);
+                        var action2 = cc.scaleTo(1,1,1);
+                        self.node.children[child].runAction(action1);
+                        self.node.children[child].runAction(action2);
+                        self.node.children[child].destroy();
+                    });
                      this.node.children[child].x = Math.floor(Math.random()*100000);
                      cc.log("该节点是否可用 : " + this.node.children[child].isValid);
                     //找到上面的格子
@@ -1077,8 +1097,21 @@ cc.Class({
                     this.map[row][col] = 0;
                     this.backGroundArr[row][col].type = -1;
                     cc.log(this.backGroundArr[row][col].isFilled + "******" + this.backGroundArr[row][col].type);
-                    //销毁该节点
-                    this.node.children[child].destroy();
+                    function test(resolve,reject){
+                        self.scheduleOnce(function(dt){
+                            resolve();
+                        },1);
+                    }
+                    var p1 = new Promise(test);
+                    cc.log("------>------>" + p1);
+                    p1.then(function(){
+                        //1秒时间缩放x轴y轴的比例为0.7，0.7
+                        var action1 = cc.scaleTo(1,0.7,0.7);
+                        var action2 = cc.scaleTo(1,1,1);
+                        self.node.children[child].runAction(action1);
+                        self.node.children[child].runAction(action2);
+                        self.node.children[child].destroy();
+                    });
                     this.node.children[child].x = Math.floor(Math.random()*100000);
                     //找到上面的格子
                     var upNodes = this.getWillRemoveUpNode(row,col);
@@ -1153,7 +1186,7 @@ cc.Class({
     
     //生成下一个形状
     generateNext : function(parentNode,x,y){
-        return this.createShape(parentNode,x,y);
+        return this.createShape(parentNode,3,6,"Stone");
 
     },
     //通过列号获得对应的X坐标
