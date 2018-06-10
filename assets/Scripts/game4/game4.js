@@ -102,6 +102,8 @@ cc.Class({
         this.costTime = 0;
         //游戏状态
         this.iState = 0;
+        //允许下落动作
+        // this.alowDown = true;
     },
     //开始游戏
     startGame : function(){
@@ -122,6 +124,7 @@ cc.Class({
         for(var i = 0;i < this.row; i++){
             //设置它的y坐标
             var tempY =y - i * this.gridSize;
+            tempY = Number(tempY.toFixed(2));
             cc.log("tempY is " + tempY);
             this.backGroundArr[i] = [];
             //地图信息
@@ -130,6 +133,7 @@ cc.Class({
                 var outArr = this.backGroundArr[i];
                 var mapData = this.map[i];
                 var tempX = x + j * this.gridSize;
+                tempX = Number(tempX.toFixed(2));
                 cc.log("tempX is " + tempX);
                 //y坐标不变，x坐标要变
                 var tempPrefab = this.setPrefabPosition(this.back,tempX,tempY,this.node);
@@ -243,6 +247,7 @@ cc.Class({
             self.updatePrefatY(nodeArr);
         }.bind(self),time);
     },
+    
     //更新预制体节点的y坐标
     updatePrefatY : function(nodeArr){
         cc.log("nodeArr is " + nodeArr);
@@ -291,7 +296,7 @@ cc.Class({
     **/
     CheckIsDown : function(nodeArr){
         if(nodeArr.length != 0){
-            
+            //如果允许下落就检查
             var row = this.getRow(nodeArr[1]);
             var col = this.getColumn(nodeArr[1]);
             cc.log("row'y is " + nodeArr[1].y);
@@ -319,11 +324,55 @@ cc.Class({
             //将当前背景节点的node改为null
             // this.backGroundArr[row][col].node = null;
             nodeArr[i].y = this.backGroundArr[row+1][col].y; 
-            var crow = this.getRow(nodeArr[i]);
-            var ccol = this.getColumn(nodeArr[i]);
-            //将背景节点的node改变h
-            // this.backGroundArr[crow][ccol].node = nodeArr[i];
+           
         }
+    },
+    //旋转方法(以最底下的节点坐标为旋转中心)
+    rotate : function(){
+        this.unscheduleAllCallbacks();
+        var self = this;
+        //旋转中心
+        var x0 = this.nodeArr[1].x;
+        var y0 = this.nodeArr[1].y;
+        var x0Row = this.getRow(this.nodeArr[1]);
+        var x0Col = this.getColumn(this.nodeArr[1]);
+
+        // var rotateArr = [[x0Row-1,x0Col],[x0Row,x0Col+1],[x0Row+1,x0Col],[x0Row,x0Col-1 ]];
+        //旋转0度对应的坐标
+        var x = this.nodeArr[0].x;
+        var y = this.nodeArr[0].y;
+        //旋转45度对应的坐标
+        var rotate45X = (x-x0)*Math.cos(-Math.PI/4)-(y-y0)*Math.sin(-Math.PI/4) + x0;
+        var rotate45Y = (x-x0)*Math.sin(-Math.PI/4)+(y-y0)*Math.cos(-Math.PI/4) + y0;
+
+        var rotate90X = this.backGroundArr[x0Row][x0Col+1].x;
+        var rotate90Y = this.backGroundArr[x0Row][x0Col+1].y;
+        //利用贝塞尔曲线实现旋转90度的动画效果
+        var bezier = [cc.p(x,y),cc.p(rotate45X,rotate45Y),cc.p(rotate90X,rotate90Y)];
+        this.nodeArr[0].x = rotate90X;
+        this.nodeArr[0].y = rotate90Y;
+        function test(resolve,reject){
+            var bezierAction = cc.bezierTo(0.08,bezier);
+            self.nodeArr[0].runAction(bezierAction);
+            resolve();
+        }
+        var promise = new Promise(test);
+        promise.then(function(){
+            cc.log("承诺正常执行########");
+            cc.log("@@@@@@@@@@" + self.nodeArr[0].x);
+            cc.log("@@@@@@@@@@" + self.nodeArr[0].y);
+            cc.log("@@@@@@@@" + self.nodeArr[1].y.toFixed(2) === self.nodeArr[0].y.toFixed(2));
+            self.downFunction(self.nodeArr,1);
+        });
+        // var bezierAction = cc.bezierTo(0.08,bezier);
+        // this.nodeArr[0].runAction(bezierAction);
+        
+        //执行完动作之后进行下落
+        // this.alowDown = true;
+    },
+    //检查是否可以旋转
+    checkIsRotate : function(){
+
     },
      //左移方法
     moveLeft    : function(){
@@ -375,6 +424,13 @@ cc.Class({
             }
         }
     },
+   
+    /**
+     * @param  {cc.Prefab} node
+     * @param  {} {varrow=this.getRow(node
+     * @param  {} ;varcol=this.getColumn(node
+     * @param  {} ;node.x=this.backGroundArr[row][col-1].x;}
+     */
     leftMove : function(node){
         var row = this.getRow(node);
         var col = this.getColumn(node);
